@@ -1,0 +1,54 @@
+---
+title: "MATH 216 Homework 3"
+author: "WRITE YOUR NAME HERE"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    collapsed: false
+    smooth_scroll: false
+---
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(readr) 
+```
+
+
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+# Do not edit this code block. By setting cache=TRUE, we are saving the output 
+# of this block to the cache. That way it only needs to run once.  This is
+# especially useful for portions of code that take a long time to run.
+profiles <- read_csv(file="profiles.csv")
+```
+
+
+
+## Admistrative:
+
+Please indicate
+
+* Who you collaborated with:
+* Roughly how much time you spent on this HW so far:
+* The URL of the RPubs published URL [here](https://www.nhl.com/).
+* What gave you the most trouble:
+* Any comments you have:
+
+
+
+## Question 1:
+
+Perform an Exploratory Data Analysis (EDA) on the `profiles` data set,
+specifically on the relationship between gender and
+
+* `income`
+* `job`
+* One more categorical variable of your choice
+
+all keeping in mind in HW-3, you will be fitting a logistic regression to
+predict a user's gender based on these variables.
+
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+
+```
