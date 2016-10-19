@@ -12,15 +12,9 @@ output:
 ```{r, echo=FALSE, message=FALSE}
 library(ggplot2)
 library(dplyr)
-library(readr) 
-```
-
-
-```{r, echo=FALSE, message=FALSE, cache=TRUE}
-# Do not edit this code block. By setting cache=TRUE, we are saving the output 
-# of this block to the cache. That way it only needs to run once.  This is
-# especially useful for portions of code that take a long time to run.
-profiles <- read_csv(file="profiles.csv")
+library(readr)
+library(lubridate)
+library(Quandl)
 ```
 
 
@@ -37,18 +31,156 @@ Please indicate
 
 
 
+
 ## Question 1:
 
-Perform an Exploratory Data Analysis (EDA) on the `profiles` data set,
-specifically on the relationship between gender and
+We will use a logistic regression model to predict sex. Our metric to rate how well our
+model performs will be:
 
-* `income`
-* `job`
-* One more categorical variable of your choice
+$$
+\frac{1}{n}\sum_{i=1}^{n}I(y_i = \widehat{y}_i)
+$$
 
-all keeping in mind in HW-3, you will be fitting a logistic regression to
-predict a user's gender based on these variables.
+where $I(A)$ is the *indicator function* that is equal to 1 if condition $A$
+holds, 0 otherwise. So
+
+* Say user $i$ **is** female, then $y_i=1$
+* Say we **predict** user $i$ is female, then $\widehat{y}_i=1$
+* In this case $I(y_i =\widehat{y}_i)=1$. 
+
+So what the above formula is reporting is the proportion of users' sex we
+correctly predicted.
+
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+# Edit this code block at your own peril! cache is set to TRUE!
+# To keep this exercise simple, let's remove the only 3 users (0.005% of users)
+# who did not list a height, define the outcome variable, and add an ID variable
+# to distinguish the users
+profiles <- read_csv(file="profiles.csv") %>% 
+  filter(!is.na(height)) %>% 
+  mutate(is_female=ifelse(sex=='f', 1, 0)) %>% 
+  tibble::rownames_to_column(var="id")
+```
+
+
+
+#### a)
+
+Define:
+
+* A *training* set `training` of 2997 users (5% of users). We will train the 
+logistic regression model to predict gender using this data. Since we want to 
+train the model to tell who is female and who is not, we use the outcome
+variable `is_female`.
+* A *test* set `test` of the remaining 56,946 users (95% of users). We will test
+how good our trained model is using this data. So at first, we will pretend we
+don't know the outcome variable `is_female`. We use the above model to make a
+prediction of sex for all 56,946 test users, then we use the `is_female` outcome
+to rate how well we performed.
+* Be sure to incorporate all the insight your garnered in your EDA in HW-2.
+
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+set.seed(76)
+
+```
+
+
+
+#### b)
+
+Train the logistic regression model to predict sex. i.e. fit a logistic
+regression model to the `training` data. Assign this model to an R object called
+`predict_sex_model`, then rate how well the model performs on the `training` data.
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 
 ```
+
+
+
+#### c)
+
+Take `predict_sex_model` and apply it to the `test` data and make a prediction 
+for each users' sex, then rate how well the model performs on the `test` data.
+
+**Hint**: What do you think `predict(predict_sex_model, newdata=test,
+type="response")` does? The help file is located in `?predict.glm`
+
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+
+```
+
+
+
+#### d)
+
+Did the model perform better on the `training` data or the `test` data? Why
+do you think that is?
+
+
+
+
+
+
+
+## Question 2:
+
+We want to compare the volatility of 
+
+* [Bitcoin](https://www.quandl.com/data/BAVERAGE/USD) prices
+* [Gold](https://www.quandl.com/data/BUNDESBANK/BBK01_WT5511) prices
+
+Let our measure of volatility be the relative change from day-to-day in price. 
+Let the reference currency be US dollars. Analyze these results and provide
+insight to a foreign currency exchanger.
+
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+
+```
+
+
+
+
+
+## Question 3:
+
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+# Edit this code block at your own peril! cache is set to TRUE!
+jukebox <- read_csv(file="reed_jukebox.csv")
+
+# Clean certain artists' names:
+sigur_ros <- "Sigur Ro\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8c\x93\xa0\xbcs"
+bjork <- "Bjo\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbcrk"
+blue_oyster_cult <- "Blue O\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbcyster Cult"
+husker_do <- "Hu\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbcsker Du\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbc"
+bjork_brodsky <- "Bjo\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbcrk & Brodsky Quartet"
+slagsmalsklubben <- "Slagsma\xfc\xbe\x99\x86\x94\xbc_lsklubben "
+bjork_sugarcubes <- "Bjo\xfc\xbe\x99\x86\x94\xbc\xfc\xbe\x8d\xa6\x98\xbcrk (Sugarcubes)"
+
+jukebox <- jukebox %>%
+  mutate(
+    artist = ifelse(artist == sigur_ros, "Sigor Ros", artist),
+    artist = ifelse(artist == bjork, "Bjork", artist),
+    artist = ifelse(artist == blue_oyster_cult, "Blue Oyster Cult", artist),
+    artist = ifelse(artist == husker_do, "Husker Do", artist),
+    artist = ifelse(artist == bjork_brodsky, "Bjork & Brodsky Quartet", artist),
+    artist = ifelse(artist == slagsmalsklubben, "Slagsmalsklubben", artist),
+    artist = ifelse(artist == bjork_sugarcubes, "Bjork (Sugarcubes)", artist)
+  )
+```
+
+
+Using the Reed College jukebox data, what are the top 10 artists played during
+the "graveyard shift" during the academic year? Define
+
+* the "graveyard shift" as midnight to 8am
+* the academic year as September through May (inclusive)
+
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+
+```
+
+
+
+
+

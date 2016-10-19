@@ -18,23 +18,9 @@ Up](https://rudeboybert.github.io/MATH216/jekyll/update/2016/09/12/getting-start
 
 ## Learning Goals
 
-* You will perform an Exploratory Data Analysis (EDA) using visualizations and
-tables. What do I mean by EDA? As explained
-[here](http://www.stat.cmu.edu/~hseltman/309/Book/chapter4.pdf), it is used as a
-preliminary analysis tool for
-    + the detection of mistakes
-    + checking of assumptions
-    + preliminary selection of appropriate models
-    + determining relationships among the explanatory variables, and
-    + assessing the direction and rough size of relationships between
-    explanatory and outcome variables.
-* Loosely speaking, any method of looking at data that does not include formal 
-statistical modeling and inference falls under the term EDA. It is just as, if
-not more, important as an actual analysis.
-* Working with categorical variables, especially when the cateogories are super
-messy.
-* Answering open-ended questions with no explicit "finish line". I have set some
-boundaries however so that you can't get too lost.
+* Using the insight you garned from your Exploratory Data Analysis (EDA) in
+HW-2, you will now fit a logistic regression model to predict users' sex.
+* Understand what **out-of-sample** prediction is
 
 
 
