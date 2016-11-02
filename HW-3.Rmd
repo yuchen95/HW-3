@@ -27,8 +27,8 @@ library(knitr)
 Please indicate
 
 * Who you collaborated with:
-* Roughly how much time you spent on this HW so far:
-* The URL of the RPubs published URL [here](https://www.nhl.com/).
+* Roughly how much time you spent on this HW so far: 5
+* The URL of the RPubs published URL [here](http://rpubs.com/ZhuYuchen/HW-3).
 * What gave you the most trouble:
 * Any comments you have:
 
