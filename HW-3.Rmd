@@ -12,9 +12,12 @@ output:
 ```{r, echo=FALSE, message=FALSE}
 library(ggplot2)
 library(dplyr)
+library(tidyr)
 library(readr)
 library(lubridate)
 library(Quandl)
+library(forcats)
+library(knitr)
 ```
 
 
@@ -81,7 +84,53 @@ to rate how well we performed.
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 set.seed(76)
+profiles_recoded <- profiles %>% 
+  mutate(job = ifelse(is.na(job), "did not report", job)) %>% 
+  mutate(job = fct_recode(job,
+                          "unemployed/retired" = "retired",
+                          "unemployed/retired" = "unemployed",
+                          "tech" = "computer / hardware / software",
+                          "tech" = "computer / hardware / software",
+                          "art/travel" = "artistic / musical / writer",
+                          "media/finance/mgmt" = "banking / financial / real estate",
+                          "administrative" = "clerical / administrative",
+                          "labor/millitary" = "construction / craftsmanship",
+                          "medicine/edu" = "education / academia",
+                          "media/finance/mgmt" = "entertainment / media",
+                          "media/finance/mgmt" =  "executive / management",
+                          "art/travel" = "hospitality / travel",
+                          "law/student" =  "law / legal services",
+                          "medicine/edu" = "medicine / health",
+                          "labor/millitary" = "military",
+                          "gov/business" = "political / government",
+                          "gov/business" = "sales / marketing / biz dev",
+                          "tech" =  "science / tech / engineering",
+                          "law/student" = "student"
+                           )) %>% 
+  mutate(income = as.factor(income)) %>% 
+  mutate(income = fct_recode(income, 
+                             "did not report" = "-1",
+                             "low" = "20000",
+                             "low" = "30000",
+                             "low" = "40000",
+                             "low" = "50000",
+                             "medium" = "60000",
+                             "medium" = "70000",
+                             "medium" = "80000",
+                             "high" = "100000",
+                             "high" = "150000",
+                             "high" = "250000",
+                             "high" = "500000",
+                             "high" = "1000000"
+                            )) %>% 
+  mutate(body_type = ifelse(is.na(body_type), "did not report", body_type)) %>%
+  mutate(body_type = as.factor(body_type))
 
+
+training <- sample_n(profiles_recoded, 2997) %>% 
+  select(id,is_female, job, income, body_type)
+test <- anti_join(profiles_recoded, training, by = "id") %>% 
+  select(id,is_female, job, income, body_type)
 ```
 
 
@@ -93,7 +142,22 @@ regression model to the `training` data. Assign this model to an R object called
 `predict_sex_model`, then rate how well the model performs on the `training` data.
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+predict_sex_model <- glm(
+  is_female ~ income + job + body_type, data = training, family = "binomial")
+training <- training %>% 
+  mutate(p_hat = fitted(predict_sex_model)) %>% 
+  mutate(is_female_predicted = ifelse(p_hat > 0.5, 1, 0))
 
+prop <- training %>% 
+  count(is_female == is_female_predicted) %>% 
+  mutate(prop = n/sum(n)) # rate: percent correct
+prop[2, 3] # rate: percent correct
+
+# worth noting: Type 1 Type 2 error rates differ a lot
+training %>% 
+  group_by(is_female, is_female_predicted) %>% 
+  tally() %>% 
+  mutate(prop = n/sum(n)) 
 ```
 
 
@@ -107,7 +171,20 @@ for each users' sex, then rate how well the model performs on the `test` data.
 type="response")` does? The help file is located in `?predict.glm`
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+test <- test %>% 
+  mutate(p_hat = predict(predict_sex_model, newdata=test, type="response"))%>% 
+  mutate(is_female_predicted = ifelse(p_hat > 0.5, 1, 0))
 
+prop <- test %>% 
+  count(is_female == is_female_predicted) %>% 
+  mutate(prop = n/sum(n)) # rate: percent correct
+prop[2, 3] # rate: percent correct
+
+# worth noting: Type 1 Type 2 error rates differ a lot
+test %>% 
+  group_by(is_female, is_female_predicted) %>% 
+  tally() %>% 
+  mutate(prop = n/sum(n)) 
 ```
 
 
@@ -117,9 +194,7 @@ type="response")` does? The help file is located in `?predict.glm`
 Did the model perform better on the `training` data or the `test` data? Why
 do you think that is?
 
-
-
-
+The model performed better on the test data, although the difference is very minimal. 
 
 
 
@@ -135,11 +210,51 @@ Let the reference currency be US dollars. Analyze these results and provide
 insight to a foreign currency exchanger.
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+bitcoin <- Quandl("BAVERAGE/USD") %>% 
+  tbl_df()
 
+bitcoin <- bitcoin %>% 
+  rename(
+    Avg = `24h Average`, 
+    Total_Volume = `Total Volume`
+    )
+
+bit_yesterday <- bitcoin %>% 
+  # can use this command because bitcoin is traded every day
+  mutate(yesterday = Date - 1)
+
+bit_joint <- 
+  left_join(bit_yesterday, bitcoin, by = c("yesterday" = "Date")) %>% 
+  select(Date, Avg.x, yesterday, Avg.y) %>% 
+  mutate(change = (Avg.x-Avg.y)/Avg.y)
+
+# daily
+ggplot(data = bit_joint, aes(x = Date, y = change)) +
+  geom_line()
+
+# monthly
+# quantify
 ```
 
 
+```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+gold <- read_csv(file = "BUNDESBANK-BBK01_WT5511.csv")
 
+gold_yesterday <- gold %>% 
+  mutate(yesterday = Date - 1) # how to get last trading day? 
+
+gold_joint <- 
+  left_join(gold_yesterday, gold, by = c("yesterday" = "Date")) %>% 
+  select(Date, Value.x, yesterday, Value.y) %>% 
+  mutate(change = (Value.x-Value.y)/Value.y)
+
+# daily
+ggplot(data = gold_joint, aes(x = Date, y = change)) +
+  geom_line()
+
+# monthly
+# quantify
+```
 
 
 ## Question 3:
@@ -177,7 +292,15 @@ the "graveyard shift" during the academic year? Define
 * the academic year as September through May (inclusive)
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
-
+top10 <- jukebox %>% 
+  mutate(time = parse_date_time(date_time, "a b d HMS y")) %>% 
+  filter(month(time) != 6 & month(time) != 7 & month(time) != 8) %>% 
+  filter(hour(time) == 0 | hour(time) == 1 | hour(time) == 2 | hour(time) == 3 | hour(time) == 4 | hour(time) == 5 | hour(time) == 6 | hour(time) == 7) %>% 
+  group_by(artist) %>% 
+  tally() %>% 
+  arrange(desc(n)) %>% 
+  head(10)
+kable(top10)
 ```
 
 
