@@ -1,6 +1,6 @@
 ---
 title: "MATH 216 Homework 3"
-author: "WRITE YOUR NAME HERE"
+author: "Yuchen Zhu"
 output:
   html_document:
     toc: true
@@ -92,13 +92,13 @@ profiles_recoded <- profiles %>%
                           "tech" = "computer / hardware / software",
                           "tech" = "computer / hardware / software",
                           "art/travel" = "artistic / musical / writer",
+                          "art/travel" = "hospitality / travel",
                           "media/finance/mgmt" = "banking / financial / real estate",
                           "administrative" = "clerical / administrative",
                           "labor/millitary" = "construction / craftsmanship",
                           "medicine/edu" = "education / academia",
                           "media/finance/mgmt" = "entertainment / media",
                           "media/finance/mgmt" =  "executive / management",
-                          "art/travel" = "hospitality / travel",
                           "law/student" =  "law / legal services",
                           "medicine/edu" = "medicine / health",
                           "labor/millitary" = "military",
@@ -145,12 +145,12 @@ regression model to the `training` data. Assign this model to an R object called
 predict_sex_model <- glm(
   is_female ~ income + job + body_type, data = training, family = "binomial")
 training <- training %>% 
-  mutate(p_hat = fitted(predict_sex_model)) %>% 
+  mutate(p_hat = predict(predict_sex_model, newdata=training, type="response")) %>% 
   mutate(is_female_predicted = ifelse(p_hat > 0.5, 1, 0))
 
 prop <- training %>% 
   count(is_female == is_female_predicted) %>% 
-  mutate(prop = n/sum(n)) # rate: percent correct
+  mutate(prop = n/sum(n))
 prop[2, 3] # rate: percent correct
 
 # worth noting: Type 1 Type 2 error rates differ a lot
@@ -194,8 +194,7 @@ test %>%
 Did the model perform better on the `training` data or the `test` data? Why
 do you think that is?
 
-The model performed better on the test data, although the difference is very minimal. 
-
+The difference is minimal and varies each time with different training and testing randomly sampled. Overall, training should perform slightly better than testing in general. This difference is becuase we fitted the model to the training data, and it is minimal because the model does not overfit.
 
 
 ## Question 2:
@@ -213,47 +212,39 @@ insight to a foreign currency exchanger.
 bitcoin <- Quandl("BAVERAGE/USD") %>% 
   tbl_df()
 
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% 
+  tbl_df()
+
 bitcoin <- bitcoin %>% 
   rename(
     Avg = `24h Average`, 
     Total_Volume = `Total Volume`
-    )
+    ) %>% 
+  select(Date, Avg) %>% 
+  mutate(Type = "bitcoin")
 
-bit_yesterday <- bitcoin %>% 
-  # can use this command because bitcoin is traded every day
-  mutate(yesterday = Date - 1)
+gold <- gold %>% 
+  rename(Avg = `Value`) %>% 
+  mutate(Type = "gold")
 
-bit_joint <- 
-  left_join(bit_yesterday, bitcoin, by = c("yesterday" = "Date")) %>% 
-  select(Date, Avg.x, yesterday, Avg.y) %>% 
-  mutate(change = (Avg.x-Avg.y)/Avg.y)
+joint <- bind_rows(bitcoin, gold) %>% 
+  group_by(Type) %>% 
+  mutate(Avg_yest = lag(Avg)) %>% 
+  mutate(Change = (Avg-Avg_yest)/Avg_yest)
 
-# daily
-ggplot(data = bit_joint, aes(x = Date, y = change)) +
-  geom_line()
-
-# monthly
-# quantify
-```
+ggplot(data = joint) +
+  geom_line(aes(x = Date, y = Change, col = Type))
 
 
-```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
-gold <- read_csv(file = "BUNDESBANK-BBK01_WT5511.csv")
+gold <- joint %>% 
+  filter(Type == "gold")
 
-gold_yesterday <- gold %>% 
-  mutate(yesterday = Date - 1) # how to get last trading day? 
+bitcoin <- joint %>% 
+  filter(Type == "bitcoin")
 
-gold_joint <- 
-  left_join(gold_yesterday, gold, by = c("yesterday" = "Date")) %>% 
-  select(Date, Value.x, yesterday, Value.y) %>% 
-  mutate(change = (Value.x-Value.y)/Value.y)
-
-# daily
-ggplot(data = gold_joint, aes(x = Date, y = change)) +
-  geom_line()
-
-# monthly
-# quantify
+# ggplot() +
+#  geom_line(data = gold, aes(x = Date, y = Change), col = "blue") +
+#  geom_line(data = bitcoin, aes(x = Date, y = Change), col = "red")
 ```
 
 
